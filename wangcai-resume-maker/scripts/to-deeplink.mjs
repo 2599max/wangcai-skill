@@ -19,7 +19,7 @@ import { deflateSync } from 'node:zlib';
 
 const [, , file, baseArg] = process.argv;
 if (!file) { console.error('用法: node to-deeplink.mjs <resume.json> [siteBaseUrl]'); process.exit(1); }
-const base = (baseArg || process.env.WANGCAI_SITE || 'https://wangcai.cn').replace(/\/+$/, '');
+const base = (baseArg || process.env.WANGCAI_SITE || 'https://wangcaiwork.top').replace(/\/+$/, '');
 
 let raw = readFileSync(file, 'utf8');
 let data;

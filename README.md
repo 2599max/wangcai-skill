@@ -1,6 +1,6 @@
 # WangCai Skill · 旺财简历技能包
 
-面向 AI Agent（Claude Code / ZCode / OpenClaw / Cursor 等任意支持 Agent Skills 的助手）的简历技能集合。所有技能与 [旺财简历编辑器](https://wangcai.cn) 的数据规范和内置能力对齐，生成的简历可**一键导入编辑器**继续编辑、导出 PDF/Word。
+面向 AI Agent（Claude Code / ZCode / OpenClaw / Cursor 等任意支持 Agent Skills 的助手）的简历技能集合。所有技能与 [旺财简历编辑器](https://wangcaiwork.top) 的数据规范和内置能力对齐，生成的简历可**一键导入编辑器**继续编辑、导出 PDF/Word。
 
 ## 技能清单
 
