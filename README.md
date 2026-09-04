@@ -12,8 +12,6 @@
 | [wangcai-resume-polish](wangcai-resume-polish/) | 润色：删平庸动词、补量化、STAR 重构、技能标签分级、自我评价去套话 | 「帮我润色简历」 |
 | [wangcai-interview-prep](wangcai-interview-prep/) | 面试预测：必问题 + 追问链 + 考察意图 + STAR 要点 | 「预测一下面试会问什么」 |
 
-技能间去重说明：本包把常见简历 skill 的重叠功能做了归并——「诊断/找短板」并入 audit，「JD 精准匹配」统一在 jd-match（与编辑器内置体检引擎的弱动词表/关键词库同一套规则），「全文润色/技能标签/自我评价」合并为 polish。
-
 ## 安装
 
 把本仓库地址发给你的 AI 助手即可，例如：
