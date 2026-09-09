@@ -7,6 +7,7 @@
 | Skill | 用途 | 典型触发语 |
 |---|---|---|
 | [wangcai-resume-maker](wangcai-resume-maker/) | 按编辑器 schema 生成简历 JSON，交付「在旺财简历中编辑」一键链接 | 「帮我把这段经历做成简历，导入旺财」 |
+| [wangcai-resume-page](wangcai-resume-page/) | 生成静态简历预览页 HTML：不可编辑、一键导出 PDF，内置「在旺财简历中编辑」深链按钮 | 「帮我生成一份简历网页，可以导出 PDF」 |
 | [wangcai-resume-audit](wangcai-resume-audit/) | 简历体检：完整性/表达/结构三维度评分 + 证据式真实性核验 | 「帮我体检一下这份简历」 |
 | [wangcai-jd-match](wangcai-jd-match/) | JD 对标：关键词覆盖度映射 + 按 JD 术语重写经历 + 缺口建议 | 「按这个 JD 帮我改简历」 |
 | [wangcai-resume-polish](wangcai-resume-polish/) | 润色：删平庸动词、补量化、STAR 重构、技能标签分级、自我评价去套话 | 「帮我润色简历」 |
@@ -37,6 +38,8 @@
 2. **wc-data.json 对接**：把简历 JSON 存为站点根目录的 `wc-data.json`，在编辑器「数据」页点「从此文件导入」。适合大文件与本地场景。
 
 站点域名通过环境变量 `WANGCAI_SITE` 或脚本第二个参数指定。
+
+3. **静态简历页**：`wangcai-resume-page` 生成成品 HTML（不可编辑、浏览器打印导出 PDF），页面内「在旺财简历中编辑」按钮用同一套 `#r=` 深链格式，点一下即跳编辑器导入——适合「先要一份成品，之后还想改」的场景。
 
 ## 数据规范
 

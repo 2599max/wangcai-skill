@@ -1,0 +1,46 @@
+#!/usr/bin/env node
+/**
+ * build-page.mjs — 把旺财简历 JSON（schemaVersion 2）填入静态预览页模板。
+ *
+ * 用法：
+ *   node build-page.mjs <resume.json> [output.html]
+ *
+ * 输入支持：wangcai-resume 包装 / 裸单份简历 JSON / 迁移包第一份。
+ * 产出：只读静态 HTML（不可编辑），自带「导出 PDF」与「在旺财简历中编辑」按钮。
+ * 编辑深链指向 https://wangcaiwork.top/builder.html#r=...（可用 WANGCAI_SITE 覆盖站点）。
+ */
+import { readFileSync, writeFileSync } from 'node:fs';
+
+const [, , file, outArg] = process.argv;
+if (!file) { console.error('用法: node build-page.mjs <resume.json> [output.html]'); process.exit(1); }
+
+import { dirname, join } from 'node:path';
+import { fileURLToPath } from 'node:url';
+const TEMPLATE = join(dirname(fileURLToPath(import.meta.url)), '..', 'references', 'resume-page-template.html');
+
+let data;
+try { data = JSON.parse(readFileSync(file, 'utf8')); } catch (e) { console.error('✗ 不是有效的 JSON: ' + e.message); process.exit(1); }
+
+let resume = data;
+if (data.type === 'wangcai-resume' && data.resume) resume = data.resume;
+else if (data.type === 'wangcai-migration' && Array.isArray(data.sections?.resumes)) resume = data.sections.resumes[0];
+if (!resume?.meta?.id || !resume.basic) { console.error('✗ 缺少 meta.id / basic —— 需要 wangcai-resume 包装 / 裸简历 JSON / 迁移包'); process.exit(1); }
+
+// 包一层标准包装，编辑器 parsePayloadText 识别 type==='wangcai-resume'
+const payload = JSON.stringify({ type: 'wangcai-resume', schemaVersion: 2, resume }, null, 0)
+  .replace(/</g, '\\u003c')   // 防 </script> 提前闭合
+  .replace(/\u2028|\u2029/g, m => m === '\u2028' ? '\\u2028' : '\\u2029');
+
+const tpl = readFileSync(TEMPLATE, 'utf8');
+if (!tpl.includes('__WC_RESUME_DATA__')) { console.error('✗ 模板缺少 __WC_RESUME_DATA__ 占位符'); process.exit(1); }
+
+const site = (process.env.WANGCAI_SITE || 'https://wangcaiwork.top').replace(/\/+$/, '');
+const html = tpl
+  .split('__WC_RESUME_DATA__').join(payload)
+  .replace("var SITE_BASE = 'https://wangcaiwork.top'", `var SITE_BASE = '${site}'`);
+
+const out = outArg || (resume.meta.name ? `简历-静态预览-${resume.meta.name}.html` : 'resume-page.html');
+writeFileSync(out, html, 'utf8');
+console.log(`✓ 已生成静态预览页: ${out}`);
+console.log(`  简历: ${resume.meta.name || resume.basic.name || '(未命名)'}  模块 ${resume.modules?.length || '默认'} 个`);
+console.log('  打开页面 → 「导出 PDF」走浏览器打印（A4）；「在旺财简历中编辑」生成深链一键导入。');
