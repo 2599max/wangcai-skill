@@ -26,6 +26,27 @@ if (data.type === 'wangcai-resume' && data.resume) resume = data.resume;
 else if (data.type === 'wangcai-migration' && Array.isArray(data.sections?.resumes)) resume = data.sections.resumes[0];
 if (!resume?.meta?.id || !resume.basic) { console.error('✗ 缺少 meta.id / basic —— 需要 wangcai-resume 包装 / 裸简历 JSON / 迁移包'); process.exit(1); }
 
+// 样式对齐：把静态页的阿酥版式映射为旺财编辑器 settings（用户未显式设置的键才注入），
+// 这样「在旺财简历中编辑」导入后的外观与静态页一致。
+// 非法值会被编辑器 normalizeSettings 安全回落默认，不会报错。
+const PAGE_SETTINGS = {
+  themeColor: '#2458b8',     // 分区标题/强调蓝
+  layoutType: 'single',      // 单栏
+  titleDeco: 'underline',    // 分区标题下划线
+  titleStyle: 'underline',
+  titleAlign: 'left',
+  headerAlign: 'left',
+  contactStyle: 'icon',      // 联系方式带图标
+  bulletStyle: 'dot',
+  accentStyle: 'line',
+  dateFormat: 'YYYY/MM',
+  fontKey: 'yahei',
+  fontSize: 14,              // ≈ 10.5pt
+  lineHeight: 1.34,          // 阿酥高密度行距
+  paperStyle: 'clean'
+};
+resume.settings = Object.assign({}, PAGE_SETTINGS, resume.settings || {});
+
 // 包一层标准包装，编辑器 parsePayloadText 识别 type==='wangcai-resume'
 const payload = JSON.stringify({ type: 'wangcai-resume', schemaVersion: 2, resume }, null, 0)
   .replace(/</g, '\\u003c')   // 防 </script> 提前闭合
