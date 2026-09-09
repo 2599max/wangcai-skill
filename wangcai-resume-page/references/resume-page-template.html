@@ -156,6 +156,13 @@
   .preview-header.minimal .preview-header-row{ display:flex; justify-content:space-between; align-items:center; gap:var(--space-3); }
   .preview-header.minimal .preview-name{ font-size:1.6em; }
   .preview-header.minimal .preview-contact{ justify-content:flex-end; margin-top:var(--space-1); }
+  /* v113·ASu 同款头部 */
+  .preview-header.asu{ display:grid; grid-template-columns:minmax(0,1fr) auto; gap:var(--space-4); align-items:start; padding-bottom:var(--space-2); border-bottom:2px solid var(--preview-theme,var(--g-blue)); }
+  .preview-header.asu .preview-name{ font-size:2.28em; line-height:1.08; margin-bottom:0.08em; }
+  .preview-header.asu .preview-title{ font-size:1.05em; color:var(--color-muted); margin-bottom:0.45em; }
+  .preview-header.asu .preview-contact{ flex-direction:column; align-items:flex-start; gap:0.24em; font-size:1.09em; line-height:1.42; color:var(--color-text,#1F2329); }
+  .preview-header.asu .preview-header-photo .preview-photo,
+  .preview-header.asu .preview-photo{ width:28mm; height:36mm; object-fit:cover; }
 
   /* 头像 */
   .preview-photo{ width:72px;height:96px; object-fit:cover; border:1px solid var(--color-border); flex-shrink:0; }
@@ -198,6 +205,10 @@
   .preview-section[data-title-deco="plain"] .preview-section-title{ border:none; padding:0; }
   .preview-section[data-title-deco="icon-circle"] .preview-section-icon{ display:inline-flex; align-items:center; justify-content:center; width:1.6em;height:1.6em; border-radius:50%; background:var(--preview-theme-light,var(--g-blue-light)); color:var(--preview-theme,var(--g-blue)); font-size:0.85em; flex-shrink:0; }
   .preview-section[data-title-deco="icon-circle"] .preview-section-title{ gap:0.4em; }
+  [data-title-deco="banner"] .preview-section:not([data-title-deco]) .preview-section-title{ background:var(--preview-theme,var(--g-blue)); color:#FFFFFF; text-transform:none; letter-spacing:normal; font-size:1.3em; padding:0.18em 0.55em; border-radius:2px; gap:0.4em; }
+  [data-title-deco="banner"] .preview-section:not([data-title-deco]) .preview-section-icon{ color:#FFFFFF; }
+  .preview-section[data-title-deco="banner"] .preview-section-title{ background:var(--preview-theme,var(--g-blue)); color:#FFFFFF; text-transform:none; letter-spacing:normal; font-size:1.3em; padding:0.18em 0.55em; border-radius:2px; gap:0.4em; }
+  .preview-section[data-title-deco="banner"] .preview-section-icon{ color:#FFFFFF; }
 
   /* 标题对齐 */
   [data-title-align="center"] .preview-section:not([data-title-align]) .preview-section-title{ justify-content:center; text-align:center; }
@@ -471,6 +482,12 @@
       }
       if (headerStyle === 'banner') {
         return '<header class="preview-header banner"><div class="preview-header-content">' +
+          '<h1 class="preview-name">' + nameHTML + '</h1>' +
+          (titleHTML ? '<div class="preview-title">' + titleHTML + '</div>' : '') + contactsHTML + '</div>' +
+          (photoHTML ? '<div class="preview-header-photo">' + photoHTML + '</div>' : '') + '</header>';
+      }
+      if (headerStyle === 'asu') {
+        return '<header class="preview-header asu"><div class="preview-header-content">' +
           '<h1 class="preview-name">' + nameHTML + '</h1>' +
           (titleHTML ? '<div class="preview-title">' + titleHTML + '</div>' : '') + contactsHTML + '</div>' +
           (photoHTML ? '<div class="preview-header-photo">' + photoHTML + '</div>' : '') + '</header>';
