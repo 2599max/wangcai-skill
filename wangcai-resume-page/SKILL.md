@@ -5,7 +5,7 @@ description: 生成旺财同款风格的静态简历预览页 HTML（不可编�
 
 # 旺财静态简历页（wangcai-resume-page）
 
-把简历 JSON 渲染成一份**只读静态 HTML**：阿酥式单栏高密度版式（蓝色分区标题 + 浅灰经历条 + 10.5pt 高密度排版），不可编辑；工具栏两个按钮——「导出 PDF」（浏览器打印，A4）和「在旺财简历中编辑」（生成 `#r=` 深链，一键导入旺财简历编辑器）。
+把简历 JSON 渲染成一份**只读静态 HTML**：与旺财编辑器**同源渲染**——同一套 DOM 结构（`.resume-paper` / `.preview-*`）+ 取自编辑器 `css/render.css` 的同源 CSS + 内联 lucide SVG 图标。**预览即所得**：静态页看到什么，深链导入编辑器后就是什么（含主题色、字号、行距、标题装饰、联系方式图标、头部布局，全部由 `settings` 驱动，与编辑器 `applySettings` 同构）。工具栏两个按钮——「导出 PDF」（浏览器打印，A4）和「在旺财简历中编辑」（`#r=` 深链一键导入）。
 
 ## 工作流
 
@@ -17,7 +17,7 @@ description: 生成旺财同款风格的静态简历预览页 HTML（不可编�
    # 站点域名默认 https://wangcaiwork.top，可用 WANGCAI_SITE 环境变量覆盖
    ```
 
-   脚本做三件事：校验 JSON 结构 → 安全转义后填入模板占位符 → 注入站点域名。
+   脚本做三件事：校验 JSON 结构 → 安全转义后填入模板占位符 → 注入站点域名 + 默认阿酥版式 settings。
 3. **交付**：把生成的 HTML 给用户，附使用说明（见下方模板）。
 4. **自检**：本地打开页面确认姓名/各分区渲染完整、无「简历数据缺失」提示；内容多页时确认打印预览分页处条目不被截断（模板已做 `break-inside: avoid`，无需处理）。
 
@@ -36,11 +36,12 @@ description: 生成旺财同款风格的静态简历预览页 HTML（不可编�
 
 ## 外观变化注意（AI 变体必须读）
 
-静态页是「阿酥式」近似预览，AI 按用户要求做的其它外观变化（配色/字号/行距/布局等）**不能只体现在静态页样式里**，必须写入简历 JSON 的 `settings` 字段——「在旺财简历中编辑」导入编辑器时以 `settings` 为准：
+静态页与编辑器共用同一渲染约定：**一切外观都在 JSON 的 `settings` 里**，两边呈现一致——
 
-- build-page.mjs 只补缺失键、**不覆盖** JSON 里已有的 settings（用户/AI 定制优先）；JSON 没写 settings 时才注入默认阿酥蓝。
-- 模板会读取 `settings.themeColor` 动态着色（六位 hex），其余键（字号/行距/布局等）编辑器端生效，静态页保持模板版式即可——向用户说明「编辑器里可以继续精调」。
-- 若 AI 改了版式（如双栏），静态页不模拟该版式，交付时注明差异，编辑器端以 settings/layoutType 呈现。
+- build-page.mjs 只补缺失键、**不覆盖** JSON 里已有的 settings（用户/AI 定制优先）；JSON 没写 settings 时才注入默认阿酥蓝（themeColor `#2458b8` / headerStyle `minimal` / titleDeco `underline` / contactStyle `icon` / fontSize 14 / lineHeight 1.34 / margin 12 / sectionGap 8）。
+- 模板与编辑器一样读取整套 settings：themeColor（六位 hex）、fontSize、lineHeight、margin、sectionGap、layoutType（single/dual/sidebar）、headerStyle（centered/side-photo/banner/minimal）、titleDeco（underline/bar/block/plain/icon-circle）、titleAlign、bulletStyle（dot/square/dash/arrow/check/none）、contactStyle（icon/pill/plain）、avatarShape、paperStyle、columnRatio 等。**AI 想改任何外观，写 settings 即可，静态页与编辑器会同步呈现。**
+- 模板图标字典为 lucide 常用集（分区图标 + 联系方式字段图标）；settings 之外的自定义 module.icon 若不在字典内回落 `circle`。模块 `iconImage`（http/data:image）原样支持。
+- 已知微小差异：条目富文本（编辑器内加粗/高亮等）在静态页按纯文本呈现；生成含富文本的简历时向用户注明。
 - 生成前自查：JSON.settings 与你向用户承诺的外观一致；不一致时以用户最新要求为准，先改 JSON 再构建。
 
 ## 红线

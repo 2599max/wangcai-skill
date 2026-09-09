@@ -30,19 +30,23 @@ if (!resume?.meta?.id || !resume.basic) { console.error('✗ 缺少 meta.id / ba
 // 这样「在旺财简历中编辑」导入后的外观与静态页一致。
 // 非法值会被编辑器 normalizeSettings 安全回落默认，不会报错。
 const PAGE_SETTINGS = {
-  themeColor: '#2458b8',     // 分区标题/强调蓝
+  themeColor: '#2458b8',     // 分区标题/强调蓝（阿酥蓝）
   layoutType: 'single',      // 单栏
+  headerStyle: 'minimal',    // 头部：姓名左 + 证件照右 + 主题色底边线（编辑器四款里最贴近阿酥）
   titleDeco: 'underline',    // 分区标题下划线
   titleStyle: 'underline',
   titleAlign: 'left',
   headerAlign: 'left',
-  contactStyle: 'icon',      // 联系方式带图标
+  contactStyle: 'icon',      // 联系方式带 lucide 图标（编辑器 v6.4 同款）
   bulletStyle: 'dot',
   accentStyle: 'line',
   dateFormat: 'YYYY/MM',
   fontKey: 'yahei',
+  fontFamily: "'Microsoft YaHei','微软雅黑',sans-serif",
   fontSize: 14,              // ≈ 10.5pt
-  lineHeight: 1.34,          // 阿酥高密度行距
+  lineHeight: 1.34,          // 阿酥高密度行距（默认 1.7，实测生效）
+  margin: 12,                // 页边距更紧（默认 16）
+  sectionGap: 8,             // 模块间距更紧（默认 16），高密度观感的主要来源
   paperStyle: 'clean'
 };
 resume.settings = Object.assign({}, PAGE_SETTINGS, resume.settings || {});

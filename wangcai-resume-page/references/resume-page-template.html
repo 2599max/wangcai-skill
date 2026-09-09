@@ -1,78 +1,249 @@
 <!DOCTYPE html>
-<!-- wangcai-resume-page 静态简历模板 v1（v2026.9.9）
-     用法：build-page.mjs 会把下方 JSON script 标签内的占位符替换为简历 JSON（schemaVersion 2）。
-     产物为只读静态页：不可编辑；工具栏提供「导出 PDF」（浏览器打印）与
-     「在旺财简历中编辑」（生成 #r= 深链打开旺财编辑器一键导入）。 -->
+<!-- wangcai-resume-page 静态简历模板 v2 · 编辑器同源渲染（v2026.9.9）
+     与旺财编辑器共用同一套 DOM 结构（.resume-paper / .preview-*）与同源 CSS（取自 css/render.css），
+     lucide 图标内联为 SVG —— 预览即所得：静态页看到什么，深链导入编辑器后就是什么。
+     build-page.mjs 把 __WC_RESUME_DATA__ 替换为简历 JSON（wangcai-resume 包装 / 裸简历 / 迁移包）。
+     产物只读不可编辑；工具栏提供「导出 PDF」（浏览器打印）与「在旺财简历中编辑」（#r= 深链）。 -->
 <html lang="zh-CN">
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>简历</title>
 <style>
-  @page { size: A4; margin: 7mm 10mm 8mm; }
-  :root { --blue: #2458b8; --text: #151515; --muted: #596273; --band: #f2f3f5; }
+  /* ===== 设计令牌（取自编辑器 css/base.css 浅色主题） ===== */
+  :root {
+    --gray-50: #f4f5f7; --gray-100: #eceef1; --gray-200: #e1e5ea;
+    --gray-700: #5c6b7a; --gray-900: #17212b;
+    --color-border: var(--gray-200);
+    --color-text: var(--gray-700);
+    --color-heading: var(--gray-900);
+    --color-muted: #707991;
+    --g-blue: #A21CAF;            /* var() 兜底；实际主题色由 settings.themeColor 注入 */
+    --g-blue-light: #FBE7F3;
+    --font-display: "Microsoft YaHei","微软雅黑","Heiti SC","黑体","PingFang SC","Hiragino Sans GB","Source Han Sans SC",sans-serif;
+    --font-body: var(--font-display);
+    --text-sm: 0.875rem;
+    --space-1: .25rem; --space-2: .5rem; --space-3: .75rem; --space-4: 1rem; --space-5: 1.25rem;
+    --radius-sm: 8px; --radius-full: 9999px;
+    --transition: 0.2s cubic-bezier(.4,0,.2,1);
+  }
   * { box-sizing: border-box; }
-  html, body { margin: 0; padding: 0; background: #fff; }
-  body { color: var(--text); font-family: "Times New Roman", "SimHei", "黑体", "Microsoft YaHei", sans-serif; font-size: 10.5pt; line-height: 1.34; }
-  a { color: var(--blue); text-decoration: none; }
+  html, body { margin: 0; padding: 0; }
+  @page { size: A4; margin: 0; }
 
-  /* 工具栏（屏幕可见，打印隐藏） */
+  /* ===== 工具栏（屏幕可见，打印隐藏） ===== */
   .toolbar { position: sticky; z-index: 10; top: 6px; display: flex; align-items: center; gap: 8px; width: max-content; max-width: calc(100vw - 32px); margin: 6px auto 8px; padding: 7px 12px; border: 1px solid #d3d7df; border-radius: 8px; background: #fff; box-shadow: 0 4px 14px rgba(15, 23, 42, .12); color: #334155; font: 13px/1 Arial, "Microsoft YaHei", sans-serif; }
   .toolbar-title { color: #475569; font-weight: 700; white-space: nowrap; }
-  .toolbar button { height: 32px; padding: 0 14px; border: 0; border-radius: 5px; font: inherit; font-weight: 700; cursor: pointer; transition: background .15s ease, transform .15s ease; }
-  .print-button { background: var(--blue); color: #fff; }
-  .print-button:hover { background: #1d4ed8; }
-  .edit-button { border: 1px solid var(--blue) !important; background: #fff; color: var(--blue); }
-  .edit-button:hover { background: #eff6ff; }
+  .toolbar button { height: 32px; padding: 0 14px; border: 0; border-radius: 5px; font: inherit; font-weight: 700; cursor: pointer; transition: background .15s ease; }
+  .print-button { background: var(--paper-theme, #2458b8); color: #fff; }
+  .print-button:hover { filter: brightness(.94); }
+  .edit-button { border: 1px solid var(--paper-theme, #2458b8) !important; background: #fff; color: var(--paper-theme, #2458b8); }
+  .edit-button:hover { background: #f4f7fd; }
   .toolbar button:active { transform: translateY(1px); }
-  .toolbar button:disabled { opacity: .55; cursor: not-allowed; }
   .save-status { color: #b91c1c; white-space: nowrap; font-size: 12px; max-width: 340px; overflow: hidden; text-overflow: ellipsis; }
   @media (max-width: 980px) { .toolbar { flex-wrap: wrap; justify-content: center; } }
   @media print { .toolbar { display: none !important; } .save-status { display: none !important; } }
 
-  /* 纸面：宽度恒定 210mm，窗口变窄时整体等比缩小（版式永不回流） */
-  .sheet { width: 210mm; min-height: 297mm; padding: 7mm 10mm 8mm; margin: 0 auto; background: #fff; transform-origin: top center; }
-  #sheet-wrap { overflow: hidden; }
-  @media screen { body { min-height: 100vh; padding: 4mm 0 12mm; background: #eef0f3; } .sheet { box-shadow: 0 2px 18px rgba(31, 41, 55, .18); } }
-  @media print {
-    .sheet { width: auto; min-height: 0; padding: 0; margin: 0; box-shadow: none; transform: none !important; }
-    #sheet-wrap { height: auto !important; }
+  /* 屏幕：灰底 + 纸面恒 210mm，窗口窄时左右滑动（ASu 同款，无缩放无回流） */
+  @media screen { body { min-height: 100vh; padding: 4mm 0 12mm; background: #eef0f3; overflow-x: auto; } }
+  @media print { body { padding: 0; background: #fff; } }
+
+  /* ===== 纸面 CSS · 与编辑器 css/render.css 同源（原样搬运，去交互态） ===== */
+  .resume-paper section { padding: 0; }
+  .resume-paper {
+    width: 210mm;
+    min-height: 297mm;
+    background: white;
+    box-shadow: 0 2px 8px rgba(0,0,0,.08);
+    margin: 0 auto;
+    padding: var(--resume-margin,18mm) var(--resume-margin,18mm);
+    position: relative;
+    font-family: var(--resume-font,"Microsoft YaHei","微软雅黑",sans-serif);
+    font-size: var(--resume-font-size,14px);
+    line-height: var(--resume-line-height,1.6);
+    color: var(--color-text);
+  }
+  .resume-paper[data-paper-style="warm"]{ background:#FFFDF6; box-shadow:0 2px 12px rgba(180,150,80,.1); border-radius:2px; }
+  .resume-paper[data-paper-style="minimal"]{ background:white; box-shadow:none; border:1px solid var(--color-border); border-radius:0; }
+  .resume-paper[data-paper-style="dotted"]{ background: radial-gradient(circle, rgba(0,0,0,.06) 1px, transparent 1.2px) 0 0 / 18px 18px, #FFFDF6; box-shadow:0 4px 14px rgba(180,100,40,.10); border-radius:3px; }
+  .resume-paper[data-paper-style="grid"]{ background: linear-gradient(to right, rgba(0,0,0,.05) 1px, transparent 1px) 0 0 / 24px 24px, linear-gradient(to bottom, rgba(0,0,0,.05) 1px, transparent 1px) 0 0 / 24px 24px, #FCFCFD; box-shadow:0 2px 10px rgba(0,0,0,.08); border-radius:2px; }
+  @media print { .resume-paper { width: auto; min-height: 0; margin: 0; box-shadow: none; } }
+
+  .preview-header{ margin-bottom:var(--resume-section-gap,1em); }
+  .preview-header-content{ flex:1 }
+  .preview-name{
+    font-family:var(--font-display);
+    font-size:2em; font-weight:700; color:var(--color-heading);
+    line-height:1.2; margin-bottom:0.15em;
+  }
+  .preview-title{ font-size:1em; color:var(--color-muted); margin-bottom:0.2em; }
+  .preview-section{ margin-bottom:var(--resume-section-gap,1em); position:relative; }
+  .preview-section:last-child{ margin-bottom:0 }
+  .preview-section-title{
+    font-family:var(--font-display);
+    font-size:1em; font-weight:700;
+    color:var(--preview-theme,var(--g-blue));
+    text-transform:uppercase; letter-spacing:.04em;
+    margin-bottom:calc(var(--resume-section-gap,1em) * 0.15);
+    display:flex; align-items:center; gap:0.35em;
+  }
+  .preview-section-icon{
+    display:inline-flex; align-items:center; justify-content:center;
+    flex-shrink:0;
+    width:1em;height:1em;box-sizing:border-box;
+    text-align:center;line-height:1;
+    color:var(--preview-theme,var(--g-blue));
+  }
+  .preview-section-icon svg{ width:1em;height:1em;stroke-width:1.75; display:block; }
+  .preview-section-text{ display:inline; }
+  .preview-block{ margin-bottom:calc(var(--resume-section-gap,1em) * 0.25); }
+  .preview-block:last-child{ margin-bottom:0 }
+  .preview-block-header{
+    display:flex; justify-content:space-between; align-items:flex-start;
+    margin-bottom:calc(var(--resume-section-gap,1em) * 0.08);
+    flex-wrap:wrap; gap:0.1em;
+  }
+  .preview-block-title{ font-weight:700; font-size:1em; color:var(--color-heading); }
+  .preview-block-subtitle{ font-size:0.929em; color:var(--color-muted); }
+  .preview-block-time{ font-size:0.857em; color:var(--color-muted); white-space:nowrap; }
+  .preview-block-link{ font-size:.86em; color:var(--preview-theme,var(--g-blue)); text-decoration:none; }
+  .preview-list{ list-style:disc; padding-left:1.5em; margin-top:0.15em; }
+  .preview-list li{
+    font-size:0.929em; color:var(--color-text);
+    line-height:var(--resume-line-height,1.6);
+    margin-bottom:calc(var(--resume-section-gap,1em) * 0.1);
+  }
+  .preview-list ul, .preview-list ol{ margin-top:0.15em; padding-left:1.4em; }
+  .preview-list ul{ list-style:circle; }
+  .preview-list li.preview-li-sub{ margin-left:1.4em; }
+  .preview-skills{ display:flex; flex-wrap:wrap; gap:6px; margin-top:var(--space-2); }
+  .tag{
+    display:inline-flex; align-items:center;
+    padding:6px 16px;
+    font-family:var(--font-display);
+    font-size:var(--text-sm); font-weight:500;
+    border-radius:var(--radius-full);
+    background:var(--gray-100); color:var(--color-text);
+  }
+  .preview-skills .tag-sm{
+    color:var(--preview-theme,var(--g-blue));
+    background:var(--preview-theme-light,var(--g-blue-light));
+    border-color:transparent; font-size:0.857em;
   }
 
-  /* 头部 */
-  h1 { margin: 0 0 3px; font-family: "Microsoft YaHei", Arial, sans-serif; font-size: 24pt; line-height: 1.08; font-weight: 700; }
-  .header-grid { display: grid; grid-template-columns: minmax(0, 1fr) 28mm; gap: 8mm; align-items: start; }
-  .job-line { margin: 1px 0 4px; color: var(--muted); font-size: 11.5pt; font-weight: 700; }
-  .meta-row { display: flex; align-items: center; gap: 4px; margin: 2px 0; font-size: 11.5pt; line-height: 1.42; white-space: nowrap; }
-  .meta-icon { width: 14px; height: 14px; flex: 0 0 auto; color: var(--blue); }
-  .meta-row strong { font-weight: 700; }
-  .separator { color: #2d2d2d; padding: 0 5px; }
-  .photo-slot { width: 28mm; height: 36mm; display: flex; align-items: center; justify-content: center; overflow: hidden; border: 1px dashed #a8adb7; background: #fafafa; color: #8b919c; font: 9pt/1.2 Arial, "Microsoft YaHei", sans-serif; text-align: center; }
-  .photo-slot.has-photo { border-color: transparent; background: transparent; }
-  .photo-slot img { display: block; width: 100%; height: 100%; object-fit: cover; }
-
-  /* 分区 */
-  .section { margin-top: 8px; }
-  .section-title { margin: 0 0 4px; padding-bottom: 2px; border-bottom: 2px solid var(--blue); color: var(--blue); font-family: "Microsoft YaHei", Arial, sans-serif; font-size: 18.5pt; line-height: 1.03; font-weight: 700; break-after: avoid; }
-  .entry { break-inside: avoid; margin-bottom: 5px; }
-  .entry-band { display: flex; align-items: baseline; justify-content: space-between; gap: 10px; padding: 3px 6px; background: var(--band); border-radius: 2px; }
-  .entry-org { font-family: "Microsoft YaHei", Arial, sans-serif; font-size: 12.5pt; font-weight: 700; }
-  .entry-role { color: var(--muted); font-size: 10.8pt; font-weight: 700; }
-  .entry-dates { color: var(--muted); font: 10.5pt/1.2 Arial, sans-serif; white-space: nowrap; }
-  .entry-content { margin: 3px 0 0; padding: 0; list-style: none; }
-  .entry-content li { position: relative; padding-left: 11px; margin: 1.5px 0; }
-  .entry-content li::before { content: "▪"; position: absolute; left: 0; top: 0; color: var(--blue); font-size: 9pt; }
-  .skill-chips { display: flex; flex-wrap: wrap; gap: 4px 5px; margin: 3px 0 0; padding: 0; list-style: none; }
-  .skill-chips li { padding: 1.5px 8px; border: 1px solid #c9d4e8; border-radius: 3px; background: #f7f9fd; color: #1d448f; font-size: 10.3pt; }
-  .plain-text { margin: 3px 0 0; white-space: pre-wrap; }
-  .intent-line { margin: 3px 0 0; font-size: 11pt; }
-  .intent-line b { color: #1d448f; }
-
-  @media print {
-    .section, .entry, .section-title { break-inside: auto; }
-    .entry { break-inside: avoid; }
-    .section-title { break-after: avoid; }
+  /* 头部布局风格 */
+  .preview-header.centered{ text-align:center; }
+  .preview-header.centered .preview-header-photo{ margin:0 auto var(--space-2); }
+  .preview-header.centered .preview-header-photo .preview-photo{ margin:0 auto; }
+  .preview-header.side-photo{ display:flex; gap:var(--space-4); align-items:flex-start; }
+  .preview-header.banner{
+    display:flex; justify-content:space-between; align-items:center; gap:var(--space-4);
+    background:var(--preview-theme,var(--g-blue)); color:white;
+    padding:var(--space-4) var(--space-5);
+    margin-left:calc(var(--resume-margin,18mm) * -1);
+    margin-right:calc(var(--resume-margin,18mm) * -1);
+    margin-top:calc(var(--resume-margin,18mm) * -1);
+    margin-bottom:var(--resume-section-gap,1em);
   }
+  .preview-header.banner .preview-name,
+  .preview-header.banner .preview-title,
+  .preview-header.banner .preview-contact,
+  .preview-header.banner .preview-contact span{ color:white }
+  .preview-header.banner .preview-title{ opacity:.85 }
+  .preview-header.banner .preview-contact{ justify-content:flex-start }
+  .preview-header.banner .preview-photo{ border-color:rgba(255,255,255,.3) }
+  .preview-header.minimal{ padding-bottom:var(--space-2); border-bottom:2px solid var(--preview-theme,var(--g-blue)); }
+  .preview-header.minimal .preview-header-row{ display:flex; justify-content:space-between; align-items:center; gap:var(--space-3); }
+  .preview-header.minimal .preview-name{ font-size:1.6em; }
+  .preview-header.minimal .preview-contact{ justify-content:flex-end; margin-top:var(--space-1); }
+
+  /* 头像 */
+  .preview-photo{ width:72px;height:96px; object-fit:cover; border:1px solid var(--color-border); flex-shrink:0; }
+  .preview-header.centered .preview-photo,
+  .preview-header.side-photo .preview-photo,
+  .preview-header.banner .preview-photo,
+  .preview-header.minimal .preview-photo{ width:72px;height:96px; object-fit:cover; border:2px solid var(--color-border); }
+  .preview-photo[data-shape="rect"]{ border-radius:2px }
+  .preview-photo[data-shape="circle"]{ border-radius:50% }
+  .preview-photo[data-shape="circle"]{ width:64px !important; height:64px !important; }
+
+  /* 联系方式 */
+  .preview-contact{ display:flex; flex-wrap:wrap; gap:0.1em 0.55em; font-size:0.78em; color:var(--color-muted); line-height:1.5; }
+  .preview-contact span{ display:flex; align-items:center; gap:3px }
+  .preview-contact-icon{
+    display:inline-flex; align-items:center; justify-content:center;
+    flex-shrink:0;
+    color:var(--g-text-secondary, #555);
+    padding:1px 2px; line-height:1; vertical-align:middle;
+  }
+  .preview-contact-icon > svg{ width:1em;height:1em;stroke-width:1.75;display:inline-block;vertical-align:middle; }
+  [data-contact-style="pill"] .preview-contact-pill{
+    display:inline-flex; align-items:center; padding:2px 10px;
+    border-radius:var(--radius-full);
+    background:var(--preview-theme-light,var(--g-blue-light));
+    color:var(--preview-theme,var(--g-blue));
+    font-size:0.85em; font-weight:500;
+  }
+
+  /* 章节标题装饰 */
+  [data-title-deco="underline"] .preview-section:not([data-title-deco]) .preview-section-title{ border-bottom:1.5px solid var(--preview-theme-light,var(--g-blue-light)); padding-bottom:0.1em; }
+  [data-title-deco="bar"] .preview-section:not([data-title-deco]) .preview-section-title{ border-left:3px solid var(--preview-theme,var(--g-blue)); padding-left:0.5em; }
+  [data-title-deco="block"] .preview-section:not([data-title-deco]) .preview-section-title{ background:var(--preview-theme,var(--g-blue)); color:white; padding:0.2em 0.6em; border-radius:var(--radius-sm); }
+  [data-title-deco="plain"] .preview-section:not([data-title-deco]) .preview-section-title{ border:none; padding:0; }
+  [data-title-deco="icon-circle"] .preview-section:not([data-title-deco]) .preview-section-icon{ display:inline-flex; align-items:center; justify-content:center; width:1.6em;height:1.6em; border-radius:50%; background:var(--preview-theme-light,var(--g-blue-light)); color:var(--preview-theme,var(--g-blue)); font-size:0.85em; flex-shrink:0; }
+  [data-title-deco="icon-circle"] .preview-section:not([data-title-deco]) .preview-section-title{ gap:0.4em; }
+  .preview-section[data-title-deco="underline"] .preview-section-title{ border-bottom:1.5px solid var(--preview-theme-light,var(--g-blue-light)); padding-bottom:0.1em; }
+  .preview-section[data-title-deco="bar"] .preview-section-title{ border-left:3px solid var(--preview-theme,var(--g-blue)); padding-left:0.5em; }
+  .preview-section[data-title-deco="block"] .preview-section-title{ background:var(--preview-theme,var(--g-blue)); color:white; padding:0.2em 0.6em; border-radius:var(--radius-sm); }
+  .preview-section[data-title-deco="plain"] .preview-section-title{ border:none; padding:0; }
+  .preview-section[data-title-deco="icon-circle"] .preview-section-icon{ display:inline-flex; align-items:center; justify-content:center; width:1.6em;height:1.6em; border-radius:50%; background:var(--preview-theme-light,var(--g-blue-light)); color:var(--preview-theme,var(--g-blue)); font-size:0.85em; flex-shrink:0; }
+  .preview-section[data-title-deco="icon-circle"] .preview-section-title{ gap:0.4em; }
+
+  /* 标题对齐 */
+  [data-title-align="center"] .preview-section:not([data-title-align]) .preview-section-title{ justify-content:center; text-align:center; }
+  .preview-section[data-title-align="center"] .preview-section-title{ justify-content:center; text-align:center; }
+
+  /* 项目符号风格 */
+  [data-bullet-style="dot"] .preview-section:not([data-bullet-style]) .preview-list{ list-style:disc }
+  [data-bullet-style="square"] .preview-section:not([data-bullet-style]) .preview-list{ list-style:square }
+  [data-bullet-style="dash"] .preview-section:not([data-bullet-style]) .preview-list{ list-style:none }
+  [data-bullet-style="dash"] .preview-section:not([data-bullet-style]) .preview-list li::before{ content:'–'; margin-right:0.4em; color:var(--preview-theme,var(--g-blue)); }
+  [data-bullet-style="arrow"] .preview-section:not([data-bullet-style]) .preview-list{ list-style:none }
+  [data-bullet-style="arrow"] .preview-section:not([data-bullet-style]) .preview-list li::before{ content:'▸'; margin-right:0.4em; color:var(--preview-theme,var(--g-blue)); }
+  [data-bullet-style="check"] .preview-section:not([data-bullet-style]) .preview-list{ list-style:none }
+  [data-bullet-style="check"] .preview-section:not([data-bullet-style]) .preview-list li::before{ content:'✓'; margin-right:0.4em; color:var(--preview-theme,var(--g-blue)); }
+  [data-bullet-style="none"] .preview-section:not([data-bullet-style]) .preview-list{ list-style:none; padding-left:0 }
+  .preview-section[data-bullet-style="dot"] .preview-list{ list-style:disc }
+  .preview-section[data-bullet-style="square"] .preview-list{ list-style:square }
+  .preview-section[data-bullet-style="dash"] .preview-list{ list-style:none }
+  .preview-section[data-bullet-style="dash"] .preview-list li::before{ content:'–'; margin-right:0.4em; color:var(--preview-theme,var(--g-blue)); }
+  .preview-section[data-bullet-style="arrow"] .preview-list{ list-style:none }
+  .preview-section[data-bullet-style="arrow"] .preview-list li::before{ content:'▸'; margin-right:0.4em; color:var(--preview-theme,var(--g-blue)); }
+  .preview-section[data-bullet-style="check"] .preview-list{ list-style:none }
+  .preview-section[data-bullet-style="check"] .preview-list li::before{ content:'✓'; margin-right:0.4em; color:var(--preview-theme,var(--g-blue)); }
+  .preview-section[data-bullet-style="none"] .preview-list{ list-style:none; padding-left:0 }
+  [data-bullet-style="dash"] .preview-list ul, [data-bullet-style="arrow"] .preview-list ul,
+  [data-bullet-style="check"] .preview-list ul, [data-bullet-style="none"] .preview-list ul,
+  [data-bullet-style="square"] .preview-list ul{ list-style:none; }
+
+  /* 双栏布局（AI 变体可能切换） */
+  .resume-body.dual-col{ display:flex; gap:calc(var(--resume-section-gap,1em) * 1.5); align-items:flex-start; }
+  .resume-body.dual-col.dual-right{ flex-direction:row-reverse; }
+  .resume-col-side{ flex:0 0 var(--resume-side-ratio, 34%); min-width:0; }
+  .resume-col-main{ flex:1; min-width:0; }
+  .resume-col .preview-section:last-child{ margin-bottom:0; }
+  .resume-col-side .preview-section-title{ font-size:0.93em; }
+  .resume-col-side .preview-list{ font-size:0.93em; }
+  .resume-col-side .preview-block{ margin-bottom:calc(var(--resume-section-gap,1em) * 0.2); }
+  .resume-body.sidebar-layout{ display:flex; gap:calc(var(--resume-section-gap,1em) * 1.4); align-items:flex-start; margin-top:calc(var(--resume-section-gap,1em) * 0.6); }
+  .resume-body.sidebar-layout .resume-col-side{ flex:0 0 var(--resume-side-ratio, 28%); min-width:0; border-right:1px dashed var(--color-border,rgba(0,0,0,.1)); padding-right:calc(var(--resume-section-gap,1em) * 0.9); }
+  .resume-body.sidebar-layout.sidebar-right{ flex-direction:row-reverse; }
+  .resume-body.sidebar-layout.sidebar-right .resume-col-side{ border-right:none; padding-right:0; border-left:1px dashed var(--color-border,rgba(0,0,0,.1)); padding-left:calc(var(--resume-section-gap,1em) * 0.9); }
+
+  /* 条目防分页断开 */
+  .resume-paper[data-avoid-break="on"] .preview-block,
+  .resume-paper[data-avoid-break="on"] .preview-list li{ break-inside:avoid; page-break-inside:avoid; }
+  .resume-paper[data-avoid-break="on"] .preview-section-title{ break-after:avoid; page-break-after:avoid; }
 </style>
 </head>
 <body>
@@ -83,7 +254,7 @@
     <span class="save-status" id="toolbar-hint"></span>
   </div>
 
-  <div id="sheet-wrap"><main class="sheet" id="resume" aria-live="polite"></main></div>
+  <main class="resume-paper" id="resume" aria-live="polite"></main>
 
   <script type="application/json" id="wc-resume-data">__WC_RESUME_DATA__</script>
   <script>
@@ -95,177 +266,349 @@
     try { resume = JSON.parse(dataEl.textContent); } catch (e) { resume = null; }
     if (resume && resume.type === 'wangcai-resume' && resume.resume) resume = resume.resume;
 
-    // 外观跟随数据：AI 生成时可能调整配色等 settings，静态页同步呈现，
-    // 导回旺财编辑器也以 settings 为准（未设置则回落阿酥蓝）
-    if (resume && resume.settings && /^#[0-9a-fA-F]{6}$/.test(resume.settings.themeColor || '')) {
-      document.documentElement.style.setProperty('--blue', resume.settings.themeColor);
-    }
-
     var esc = function (s) {
       return String(s == null ? '' : s)
         .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
         .replace(/"/g, '&quot;').replace(/'/g, '&#39;');
     };
-    var ICONS = {
-      phone: '<svg class="meta-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72c.13.96.36 1.9.7 2.81a2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45c.91.34 1.85.57 2.81.7A2 2 0 0 1 22 16.92z"/></svg>',
-      mail: '<svg class="meta-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="4" width="20" height="16" rx="2"/><path d="m22 7-10 6L2 7"/></svg>',
-      pin: '<svg class="meta-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 10c0 6-8 12-8 12s-8-6-8-12a8 8 0 0 1 16 0Z"/><circle cx="12" cy="10" r="3"/></svg>',
-      globe: '<svg class="meta-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M2 12h20M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/></svg>',
-      cake: '<svg class="meta-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 21v-8a2 2 0 0 0-2-2H6a2 2 0 0 0-2 2v8"/><path d="M4 16s.9-2 4-2 5 2 8 2 4-2 4-2"/><rect x="2" y="21" width="20" height="0"/><path d="M12 7v4M12 3a1.5 1.5 0 0 0-1.5 1.5c0 .8 1.5 2 1.5 2s1.5-1.2 1.5-2A1.5 1.5 0 0 0 12 3z"/></svg>'
-    };
-    var fmtDate = function (d) { return String(d || '').replace(/-/g, '/'); };
-    var dateRange = function (a, b) {
-      if (!a && !b) return '';
-      return fmtDate(a) + ' — ' + (b === '至今' ? '至今' : fmtDate(b));
-    };
-    var lines = function (text) {
-      return String(text || '').split(/\r?\n/).map(function (l) { return l.trim(); }).filter(Boolean);
-    };
 
-    // ---------- 各分区渲染 ----------
+    // ---------- lucide 图标（与编辑器同源的 SVG path 数据） ----------
+    var LUCIDE = {
+      'user': '<path d="M19 21v-2a4 4 0 0 0-4-4H9a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/>',
+      'briefcase': '<path d="M16 20V4a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v16"/><rect width="20" height="14" x="2" y="6" rx="2"/>',
+      'activity': '<polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/>',
+      'cake': '<path d="M20 21v-8a2 2 0 0 0-2-2H6a2 2 0 0 0-2 2v8"/><path d="M4 16s.9-2 4-2 5 2 8 2 4-2 4-2"/><rect x="2" y="21" width="20" height="4" rx="1"/><path d="M12 7v4"/><path d="M12 7a2 2 0 1 0 .5-3.94"/>',
+      'mail': '<rect width="20" height="16" x="2" y="4" rx="2"/><path d="m22 7-8.97 5.7a1.94 1.94 0 0 1-2.06 0L2 7"/>',
+      'phone': '<path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z"/>',
+      'map-pin': '<path d="M20 10c0 6-8 12-8 12s-8-6-8-12a8 8 0 0 1 16 0Z"/><circle cx="12" cy="10" r="3"/>',
+      'link': '<path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/>',
+      'ruler': '<path d="M21.3 15.3a2.4 2.4 0 0 1 0 3.4l-2.6 2.6a2.4 2.4 0 0 1-3.4 0L2.3 8.7a2.41 2.41 0 0 1 0-3.4l2.6-2.6a2.41 2.41 0 0 1 3.4 0Z"/><path d="m14.5 12.5 2-2"/><path d="m11.5 9.5 2-2"/><path d="m8.5 6.5 2-2"/><path d="m17.5 15.5 2-2"/>',
+      'scale': '<path d="m16 16 3-8 3 8c-.87.65-1.92 1-3 1s-2.13-.35-3-1Z"/><path d="m2 16 3-8 3 8c-.87.65-1.92 1-3 1s-2.13-.35-3-1Z"/><path d="M7 21h10"/><path d="M12 3v18"/><path d="M3 7h2c2 0 5-1 7-2 2 1 5 2 7 2h2"/>',
+      'flag': '<path d="M4 15s1-1 4-1 5 2 8 2 4-1 4-1V3s-1 1-4 1-5-2-8-2-4 1-4 1z"/><line x1="4" x2="4" y1="22" y2="15"/>',
+      'home': '<path d="m3 9 9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/>',
+      'star': '<polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/>',
+      'zap': '<path d="M4 14a1 1 0 0 1-.78-1.63l9.9-10.2a.5.5 0 0 1 .86.46l-1.92 6.02A1 1 0 0 0 13 10h7a1 1 0 0 1 .78 1.63l-9.9 10.2a.5.5 0 0 1-.86-.46l1.92-6.02A1 1 0 0 0 11 14z"/>',
+      'rocket': '<path d="M4.5 16.5c-1.5 1.26-2 5-2 5s3.74-.5 5-2c.71-.84.7-2.13-.09-2.91a2.18 2.18 0 0 0-2.91-.09z"/><path d="m12 15-3-3a22 22 0 0 1 2-3.95A12.88 12.88 0 0 1 22 2c0 2.72-.78 7.5-6 11a22.35 22.35 0 0 1-4 2z"/><path d="M9 12H4s.55-3.03 2-4c1.62-1.08 5 0 5 0"/><path d="M12 15v5s3.03-.55 4-2c1.08-1.62 0-5 0-5"/>',
+      'graduation-cap': '<path d="M21.42 10.922a1 1 0 0 0-.019-1.838L12.83 5.18a2 2 0 0 0-1.66 0L2.6 9.08a1 1 0 0 0 0 1.832l8.57 3.908a2 2 0 0 0 1.66 0z"/><path d="M22 10v6"/><path d="M6 12.5V16a6 3 0 0 0 12 0v-3.5"/>',
+      'compass': '<circle cx="12" cy="12" r="10"/><polygon points="16.24 7.76 14.12 14.12 7.76 16.24 9.88 9.88 16.24 7.76"/>',
+      'book-open': '<path d="M12 7v14"/><path d="M3 18a1 1 0 0 1-1-1V4a1 1 0 0 1 1-1h5a4 4 0 0 1 4 4 4 4 0 0 1 4-4h5a1 1 0 0 1 1 1v13a1 1 0 0 1-1 1h-6a3 3 0 0 0-3 3 3 3 0 0 0-3-3z"/>',
+      'users': '<path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/>',
+      'award': '<circle cx="12" cy="8" r="6"/><path d="M15.477 12.89 17 22l-5-3-5 3 1.523-9.11"/>',
+      'badge-check': '<path d="M3.85 8.62a4 4 0 0 1 4.78-4.77 4 4 0 0 1 6.74 0 4 4 0 0 1 4.78 4.78 4 4 0 0 1 0 6.74 4 4 0 0 1-4.77 4.78 4 4 0 0 1-6.75 0 4 4 0 0 1-4.78-4.77 4 4 0 0 1 0-6.76Z"/><path d="m9 12 2 2 4-4"/>',
+      'palette': '<circle cx="13.5" cy="6.5" r=".5" fill="currentColor"/><circle cx="17.5" cy="10.5" r=".5" fill="currentColor"/><circle cx="8.5" cy="7.5" r=".5" fill="currentColor"/><circle cx="6.5" cy="12.5" r=".5" fill="currentColor"/><path d="M12 2C6.5 2 2 6.5 2 12s4.5 10 10 10c.926 0 1.648-.746 1.648-1.688 0-.437-.18-.835-.437-1.125-.29-.289-.438-.652-.438-1.125a1.64 1.64 0 0 1 1.668-1.668h1.996c3.051 0 5.555-2.503 5.555-5.554C21.965 6.012 17.461 2 12 2z"/>',
+      'flask-conical': '<path d="M10 2v7.527a2 2 0 0 1-.211.896L4.72 20.55a1 1 0 0 0 .9 1.45h12.76a1 1 0 0 0 .9-1.45l-5.069-10.127A2 2 0 0 1 14 9.527V2"/><path d="M8.5 2h7"/><path d="M7 16h10"/>',
+      'circle': '<circle cx="12" cy="12" r="10"/>'
+    };
+    var FIELD_ICONS = { name:'user', jobTitle:'briefcase', status:'activity', birth:'cake', email:'mail', phone:'phone', location:'map-pin', website:'link', gender:'user', height:'ruler', weight:'scale', ethnicity:'flag', hometown:'home', political:'star' };
+    var TYPE_ICONS = { basic:'user', skills:'zap', experience:'briefcase', projects:'rocket', education:'graduation-cap', jobIntent:'compass', training:'book-open', activities:'users', honors:'award', certs:'badge-check', portfolio:'palette', research:'flask-conical', coverLetter:'mail' };
+    function lucideSvg(name) {
+      var d = LUCIDE[name];
+      if (!d) return '';
+      return '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">' + d + '</svg>';
+    }
+
+    // ---------- 外观：与编辑器 applySettings 同源（settings 驱动） ----------
+    var s = (resume && resume.settings) || {};
+    var paper = document.getElementById('resume');
+    function applySettings() {
+      if (s.themeColor && /^#[0-9a-fA-F]{6}$/.test(s.themeColor)) {
+        document.documentElement.style.setProperty('--preview-theme', s.themeColor);
+        document.documentElement.style.setProperty('--preview-theme-light', s.themeColor + '22');
+        document.documentElement.style.setProperty('--paper-theme', s.themeColor);
+      }
+      if (s.fontFamily) paper.style.setProperty('--resume-font', s.fontFamily);
+      if (s.fontSize != null) paper.style.setProperty('--resume-font-size', s.fontSize + 'px');
+      if (s.lineHeight != null) paper.style.setProperty('--resume-line-height', String(s.lineHeight));
+      if (s.margin != null) paper.style.setProperty('--resume-margin', s.margin + 'mm');
+      if (s.sectionGap != null) paper.style.setProperty('--resume-section-gap', s.sectionGap + 'px');
+      if (s.columnRatio != null) paper.style.setProperty('--resume-side-ratio', (Number(s.columnRatio) * 100).toFixed(1) + '%');
+      paper.setAttribute('data-header-style', s.headerStyle || 'centered');
+      paper.setAttribute('data-title-deco', s.titleDeco || s.titleStyle || 'underline');
+      paper.setAttribute('data-title-align', s.titleAlign || 'left');
+      paper.setAttribute('data-avatar-shape', s.avatarShape || 'circle');
+      paper.setAttribute('data-bullet-style', s.bulletStyle || 'dot');
+      paper.setAttribute('data-avoid-break', s.avoidBreak === false ? 'off' : 'on');
+      paper.setAttribute('data-contact-style', s.contactStyle || 'icon');
+      paper.setAttribute('data-layout-type', s.layoutType || 'single');
+      paper.setAttribute('data-paper-style', s.paperStyle || 'clean');
+    }
+
+    // ---------- 基础零件 ----------
+    function escAttr(v) { return esc(v).replace(/\n/g, ' '); }
+    function fmtTime(start, end, current) {
+      var parts = [];
+      if (start) parts.push(esc(start));
+      if (end) parts.push(esc(end));
+      else if (current) parts.push('至今');
+      return parts.join(' — ');
+    }
+    // 行首 Tab → 二级条目（与编辑器 _stripLeadTab 行为一致）
+    function renderBullets(raw) {
+      var lines = String(raw == null ? '' : raw).split(/\r\n|\r|\n/)
+        .map(function (l) { return l.replace(/\s+$/, ''); })
+        .filter(function (l) { return l.trim().length > 0; });
+      if (!lines.length) return '';
+      return '<ul class="preview-list">' + lines.map(function (l) {
+        var m = /^\t+/.exec(l);
+        var sub = m ? ' class="preview-li-sub"' : '';
+        return '<li' + sub + '>' + esc(l.replace(/^\t+/, '')) + '</li>';
+      }).join('') + '</ul>';
+    }
+    function sectionOpen(module) {
+      var attrs = '';
+      var st = module && module.style;
+      if (st && typeof st === 'object') {
+        if (st.titleDeco) attrs += ' data-title-deco="' + escAttr(st.titleDeco) + '"';
+        if (st.titleAlign) attrs += ' data-title-align="' + escAttr(st.titleAlign) + '"';
+        if (st.bulletStyle) attrs += ' data-bullet-style="' + escAttr(st.bulletStyle) + '"';
+        if (st.themeColor && /^#[0-9a-fA-F]{6}$/.test(st.themeColor)) {
+          attrs += ' style="--preview-theme:' + escAttr(st.themeColor) + ';--preview-theme-light:' + escAttr(st.themeColor + '22') + '"';
+        }
+      }
+      return '<section class="preview-section"' + attrs + '>';
+    }
+    function moduleIcon(module) {
+      var src = module.iconImage ? String(module.iconImage).trim() : '';
+      var hasImg = !!(src && /^(https?:\/\/|data:image\/)/i.test(src));
+      var name = module.icon || TYPE_ICONS[module.type] || '';
+      if (!hasImg && !name) return '';
+      var style = '';
+      var size = Number(module.iconSize);
+      if (size > 0 && isFinite(size)) style = ' style="font-size:' + size + 'px"';
+      var inner = hasImg
+        ? '<img src="' + escAttr(src) + '" alt="" style="width:1em;height:1em;object-fit:contain;display:block">'
+        : lucideSvg(LUCIDE[name] ? name : 'circle');
+      return '<span class="preview-section-icon"' + style + '>' + inner + '</span>';
+    }
+    function titleBar(module) {
+      return '<div class="preview-section-title">' + moduleIcon(module) +
+        '<span class="preview-section-text">' + esc(module.title || '') + '</span></div>';
+    }
+    function entry(opts) {
+      var subHTML = opts.subtitle ? '<div class="preview-block-subtitle">' + esc(opts.subtitle) + '</div>' : '';
+      var titleHTML = '<div class="preview-block-title">' + esc(opts.title || '') +
+        (opts.link ? ' <span class="preview-block-link">' + esc(opts.link) + '</span>' : '') + '</div>';
+      return '<div class="preview-block">' +
+        '<div class="preview-block-header">' +
+          '<div>' + titleHTML + subHTML + '</div>' +
+          (opts.time ? '<div class="preview-block-time">' + opts.time + '</div>' : '') +
+        '</div>' +
+        (opts.bullets || '') +
+      '</div>';
+    }
+    function entryList(module, list, opts) {
+      var blocks = '';
+      if (Array.isArray(list) && list.length > 0) {
+        blocks = list.map(function (it) {
+          var subtitleParts = opts.subtitleParts ? opts.subtitleParts(it) : null;
+          var subtitle = subtitleParts ? subtitleParts.filter(Boolean).join(' · ') : (opts.subtitleKey ? (it[opts.subtitleKey] || '') : '');
+          return entry({
+            title: it[opts.titleKey] || '',
+            link: opts.withLink ? (it.link || '') : '',
+            subtitle: subtitle,
+            time: opts.hasTime === false ? '' : fmtTime(it.start, it.end, it.current),
+            bullets: renderBullets(it.desc)
+          });
+        }).join('');
+      }
+      if (!blocks) return '';
+      return sectionOpen(module) + titleBar(module) + blocks + '</section>';
+    }
+    function renderTags(raw) {
+      var arr = String(raw || '').split(/[,\n、，]/).map(function (t) { return t.trim(); }).filter(Boolean);
+      if (!arr.length) return '';
+      return '<div class="preview-skills">' +
+        arr.map(function (t) { return '<span class="tag tag-sm">' + esc(t) + '</span>'; }).join('') + '</div>';
+    }
+
+    // ---------- 头部（与 renderHeader 同构） ----------
+    var FALLBACK_LAYOUT = [
+      { key:'name', visible:true }, { key:'jobTitle', visible:true },
+      { key:'location', visible:true }, { key:'email', visible:true },
+      { key:'phone', visible:true }, { key:'website', visible:true },
+      { key:'birth', visible:true }, { key:'status', visible:true }
+    ];
     function renderHeader() {
-      var b = (resume.basic || {});
-      var metaBits = [];
-      if (b.phone) metaBits.push(ICONS.phone + '<strong>' + esc(b.phone) + '</strong>');
-      if (b.email) metaBits.push(ICONS.mail + esc(b.email));
-      if (b.location) metaBits.push(ICONS.pin + esc(b.location));
-      if (b.website) metaBits.push(ICONS.globe + '<a href="' + esc(b.website) + '" target="_blank" rel="noopener">' + esc(b.website) + '</a>');
-      if (b.birth) metaBits.push(ICONS.cake + esc(b.birth));
-      // 每 2 项一行
-      var rows = '';
-      for (var i = 0; i < metaBits.length; i += 2) {
-        rows += '<div class="meta-row">' + metaBits.slice(i, i + 2).join('<span class="separator">|</span>') + '</div>';
+      var b = resume.basic || {};
+      var headerStyle = s.headerStyle || 'centered';
+      var hasAvatar = !!b.avatar;
+      var wantsAvatar = !!s.showAvatar && (s.avatarShape || 'circle') !== 'none';
+      var photoHTML = (hasAvatar && wantsAvatar)
+        ? '<img src="' + escAttr(b.avatar) + '" alt="" class="preview-photo" data-shape="' + escAttr(s.avatarShape || 'circle') + '">'
+        : '';
+      var layout = (Array.isArray(b.layout) && b.layout.length) ? b.layout : FALLBACK_LAYOUT;
+      function item(k) { for (var i = 0; i < layout.length; i++) if (layout[i].key === k) return layout[i]; return null; }
+      var nameHTML = (item('name') && item('name').visible !== false && b.name) ? esc(b.name) : '';
+      var titleHTML = (item('jobTitle') && item('jobTitle').visible !== false && b.jobTitle) ? esc(b.jobTitle) : '';
+
+      var contactStyle = s.contactStyle || 'icon';
+      var iconMap = b.iconMap || {};
+      var contacts = [];
+      for (var i = 0; i < layout.length; i++) {
+        var it = layout[i], k = it.key;
+        if (k === 'name' || k === 'jobTitle') continue;
+        if (it.visible === false) continue;
+        var val = b[k];
+        if (!val) continue;
+        if (k === 'status' && val === '在职') continue;
+        if (contactStyle === 'icon') {
+          var iconName = iconMap[k] || FIELD_ICONS[k] || 'circle';
+          contacts.push('<span><span class="preview-contact-icon">' + lucideSvg(iconName) + '</span> <span>' + esc(val) + '</span></span>');
+        } else if (contactStyle === 'pill') {
+          contacts.push('<span class="preview-contact-pill">' + esc(val) + '</span>');
+        } else {
+          contacts.push('<span>' + esc(val) + '</span>');
+        }
       }
-      var jobLine = (b.job || b.jobTitle) ? '<div class="job-line">' + esc([b.job, b.jobTitle].filter(Boolean).join(' · ')) + '</div>' : '';
-      var genderBit = b.gender ? '<div class="job-line">' + esc(b.gender) + '</div>' : '';
-      var photo = b.avatar
-        ? '<div class="photo-slot has-photo"><img src="' + esc(b.avatar) + '" alt="证件照"></div>'
-        : '<div class="photo-slot">证件照</div>';
-      return '<header class="header-grid"><div>' +
-        '<h1>' + esc(b.name || '姓名') + '</h1>' + jobLine + genderBit + rows +
-        '</div>' + photo + '</header>';
-    }
+      var contactsHTML = contacts.length ? '<div class="preview-contact">' + contacts.join('') + '</div>' : '';
+      var main = '<div class="preview-header-content"><h1 class="preview-name">' + nameHTML + '</h1>' +
+        (titleHTML ? '<div class="preview-title">' + titleHTML + '</div>' : '') + contactsHTML + '</div>';
 
-    function renderList(title, items, orgKey) {
-      var out = '';
-      (items || []).forEach(function (it) {
-        var org = it[orgKey] || it.name || it.company || '';
-        var roleBits = [it.position, it.major ? [it.major, it.degree].filter(Boolean).join(' · ') : '']
-          .filter(Boolean).join(' · ');
-        var lis = lines(it.content).map(function (l) { return '<li>' + esc(l) + '</li>'; }).join('');
-        out += '<div class="entry">' +
-          '<div class="entry-band"><span><span class="entry-org">' + esc(org) + '</span>' +
-          (roleBits ? '<span class="entry-role">　' + esc(roleBits) + '</span>' : '') + '</span>' +
-          '<span class="entry-dates">' + esc(dateRange(it.start, it.end)) + '</span></div>' +
-          (lis ? '<ul class="entry-content">' + lis + '</ul>' : '') +
-          '</div>';
-      });
-      return out ? section(title, out) : '';
-    }
-
-    function renderSkills() {
-      var raw = (resume.skills && resume.skills.content) || '';
-      var tags = String(raw).split(/[,，、\n]/).map(function (t) { return t.trim(); }).filter(Boolean);
-      if (!tags.length) return '';
-      return section('专业技能', '<ul class="skill-chips">' +
-        tags.map(function (t) { return '<li>' + esc(t) + '</li>'; }).join('') + '</ul>');
-    }
-
-    function renderIntent() {
-      var j = resume.jobIntent || {};
-      var bits = [['目标岗位', j.position], ['意向城市', j.city], ['期望薪资', j.salary], ['求职类型', j.type]]
-        .filter(function (p) { return p[1]; })
-        .map(function (p) { return '<b>' + p[0] + '：</b>' + esc(p[1]); });
-      if (!bits.length) return '';
-      return section('求职意向', '<div class="intent-line">' + bits.join('<span class="separator">｜</span>') + '</div>');
-    }
-
-    function renderCustom(cs) {
-      if (!cs) return '';
-      var body = '';
-      if (cs.kind === 'text') body = '<div class="plain-text">' + esc(cs.content || '') + '</div>';
-      else if (cs.kind === 'tags') {
-        var tags = String(cs.content || '').split(/[,，、\n]/).map(function (t) { return t.trim(); }).filter(Boolean);
-        body = tags.length ? '<ul class="skill-chips">' + tags.map(function (t) { return '<li>' + esc(t) + '</li>'; }).join('') + '</ul>' : '';
-      } else { // list
-        var out = '';
-        (cs.items || []).forEach(function (it) {
-          var lis = lines(it.content).map(function (l) { return '<li>' + esc(l) + '</li>'; }).join('');
-          out += '<div class="entry"><div class="entry-band"><span><span class="entry-org">' +
-            esc(it.name || it.company || '') + '</span>' +
-            (it.position ? '<span class="entry-role">　' + esc(it.position) + '</span>' : '') + '</span>' +
-            '<span class="entry-dates">' + esc(dateRange(it.start, it.end)) + '</span></div>' +
-            (lis ? '<ul class="entry-content">' + lis + '</ul>' : '') + '</div>';
-        });
-        body = out;
+      if (headerStyle === 'side-photo') {
+        return '<header class="preview-header side-photo">' + photoHTML +
+          '<div class="preview-header-content"><h1 class="preview-name">' + nameHTML + '</h1>' +
+          (titleHTML ? '<div class="preview-title">' + titleHTML + '</div>' : '') + contactsHTML + '</div></header>';
       }
-      return body ? section(cs.title || '其他', body) : '';
+      if (headerStyle === 'banner') {
+        return '<header class="preview-header banner"><div class="preview-header-content">' +
+          '<h1 class="preview-name">' + nameHTML + '</h1>' +
+          (titleHTML ? '<div class="preview-title">' + titleHTML + '</div>' : '') + contactsHTML + '</div>' +
+          (photoHTML ? '<div class="preview-header-photo">' + photoHTML + '</div>' : '') + '</header>';
+      }
+      if (headerStyle === 'minimal') {
+        return '<header class="preview-header minimal"><div class="preview-header-row">' +
+          '<div class="preview-header-main"><h1 class="preview-name">' + nameHTML + '</h1>' +
+          (titleHTML ? '<div class="preview-title">' + titleHTML + '</div>' : '') + '</div>' +
+          (photoHTML ? '<div class="preview-header-photo">' + photoHTML + '</div>' : '') + '</div>' +
+          contactsHTML + '</header>';
+      }
+      return '<header class="preview-header centered">' +
+        (photoHTML ? '<div class="preview-header-photo">' + photoHTML + '</div>' : '') + main + '</header>';
     }
 
-    function section(title, inner) {
-      return '<section class="section"><h2 class="section-title">' + esc(title) + '</h2>' + inner + '</section>';
-    }
-
-    // ---------- 按模块清单组装 ----------
-    var MODULE_TITLE = {
-      basic: '基本信息', skills: '专业技能', experience: '工作经历', projects: '项目经历',
-      education: '教育经历', jobIntent: '求职意向', training: '培训经历', activities: '实践经历',
-      honors: '荣誉奖项', certs: '证书资质', portfolio: '作品展示', research: '研究经历', coverLetter: '求职信'
+    // ---------- 各分区（与 SECTION_RENDERERS 同构） ----------
+    var R = {
+      skills: function (m) {
+        var bullets = renderBullets((resume.skills && resume.skills.content) || '');
+        return bullets ? sectionOpen(m) + titleBar(m) + bullets + '</section>' : '';
+      },
+      experience: function (m) {
+        return entryList(m, resume.experience, { titleKey: 'company', subtitleKey: 'position' });
+      },
+      projects: function (m) {
+        return entryList(m, resume.projects, { titleKey: 'name', subtitleKey: 'role', withLink: true });
+      },
+      education: function (m) {
+        return entryList(m, resume.education, { titleKey: 'school', subtitleParts: function (it) { return [it.major, it.degree]; } });
+      },
+      training: function (m) {
+        return entryList(m, resume.training, { titleKey: 'name', subtitleParts: function (it) { return [it.cert, it.org]; } });
+      },
+      activities: function (m) {
+        return entryList(m, resume.activities, { titleKey: 'name', subtitleParts: function (it) { return [it.role, it.org]; } });
+      },
+      honors: function (m) {
+        return entryList(m, resume.honors, { titleKey: 'name', hasTime: false, subtitleParts: function (it) { return [it.level, it.issuer, it.when]; } });
+      },
+      certs: function (m) {
+        return entryList(m, resume.certs, { titleKey: 'name', hasTime: false, subtitleParts: function (it) { return [it.issuer, it.when, it.number]; } });
+      },
+      portfolio: function (m) {
+        return entryList(m, resume.portfolio, { titleKey: 'name', hasTime: false, withLink: true, subtitleParts: function (it) { return [it.role, it.when]; } });
+      },
+      research: function (m) {
+        return entryList(m, resume.research, { titleKey: 'name', subtitleParts: function (it) { return [it.advisor ? '导师：' + it.advisor : '', it.role]; } });
+      },
+      jobIntent: function (m) {
+        var ji = resume.jobIntent;
+        if (!ji || typeof ji !== 'object') return '';
+        // 与编辑器 store 默认合并行为一致（DEFAULT_JOB_INTENT）：缺失字段补默认，非空默认才会显示
+        if (ji.type == null || ji.type === '') ji.type = '全职';
+        if (ji.startDate == null || ji.startDate === '') ji.startDate = '随时';
+        var salaryText = '';
+        if (ji.salaryMin && ji.salaryMax) salaryText = ji.salaryMin + ' - ' + ji.salaryMax + ' K/月';
+        else if (ji.salaryMax) salaryText = ji.salaryMax + ' K/月';
+        else if (ji.salaryMin) salaryText = ji.salaryMin + ' K/月';
+        var pairs = [
+          ['期望岗位', ji.position], ['工作类型', ji.type], ['期望地点', ji.location],
+          ['期望薪资', salaryText], ['到岗时间', ji.startDate], ['期望行业', ji.industry]
+        ].filter(function (p) { return p[1] && String(p[1]).trim(); });
+        if (!pairs.length) return '';
+        var rows = pairs.map(function (p) {
+          return '<div class="preview-pair"><span class="preview-pair-label">' + esc(p[0]) +
+            '</span><span class="preview-pair-value">' + esc(p[1]) + '</span></div>';
+        }).join('');
+        return sectionOpen(m) + titleBar(m) + '<div class="preview-pair-grid">' + rows + '</div></section>';
+      },
+      coverLetter: function (m) {
+        var cl = resume.coverLetter;
+        if (!cl || !String(cl).trim()) return '';
+        return sectionOpen(m) + titleBar(m) +
+          '<p class="preview-block">' + esc(cl).replace(/\n/g, '<br>') + '</p></section>';
+      },
+      custom: function (m) {
+        var cs = null;
+        var arr = resume.customSections || [];
+        for (var i = 0; i < arr.length; i++) if (arr[i].key === m.key) { cs = arr[i]; break; }
+        if (!cs) return '';
+        var inner = '';
+        if (cs.content && cs.content.trim()) {
+          if (cs.kind === 'tags') inner = renderTags(cs.content);
+          else inner = '<p class="preview-block">' + esc(cs.content).replace(/\n/g, '<br>') + '</p>';
+        } else if (cs.kind === 'list' && Array.isArray(cs.items) && cs.items.length) {
+          var blocks = cs.items.map(function (it) {
+            return entry({ title: it.name || '', subtitle: it.position || '', time: fmtTime(it.start, it.end, it.current), bullets: renderBullets(it.desc) });
+          }).join('');
+          if (blocks) inner = blocks;
+        }
+        return inner ? sectionOpen(m) + titleBar(m) + inner + '</section>' : '';
+      }
     };
-    var BUILTIN = {
-      jobIntent: renderIntent, skills: renderSkills,
-      experience: renderList.bind(null, '工作经历', resume && resume.experience, 'company'),
-      projects: renderList.bind(null, '项目经历', resume && resume.projects, 'name'),
-      education: renderList.bind(null, '教育经历', resume && resume.education, 'school'),
-      training: renderList.bind(null, '培训经历', resume && resume.training, 'company'),
-      activities: renderList.bind(null, '实践经历', resume && resume.activities, 'company'),
-      research: renderList.bind(null, '研究经历', resume && resume.research, 'company')
-    };
 
+    // ---------- 组装 ----------
     function renderAll() {
       if (!resume || !resume.basic) {
-        document.getElementById('resume').innerHTML =
-          '<p style="color:#b91c1c">简历数据缺失或格式不正确（需要 schemaVersion 2 简历 JSON）。</p>';
+        paper.innerHTML = '<p style="color:#b91c1c">简历数据缺失或格式不正确（需要 schemaVersion 2 简历 JSON）。</p>';
         return;
       }
       document.title = (resume.basic.name || '简历') + ' · 简历';
+      applySettings();
       var html = renderHeader();
       var mods = Array.isArray(resume.modules) && resume.modules.length
         ? resume.modules
-        : ['basic', 'skills', 'experience', 'projects', 'education'].map(function (t) { return { type: t, title: MODULE_TITLE[t] }; });
-      var customs = resume.customSections || [];
-      mods.forEach(function (m) {
-        if (m && m.visible === false) return;
-        var type = m.type;
-        if (type === 'basic') return; // 已在头部渲染
-        if (type === 'custom') {
-          var cs = customs.filter(function (c) { return c.key === m.key || c.id === m.key; })[0];
-          if (cs) html += renderCustom({ title: m.title || cs.title, kind: cs.kind, content: cs.content, items: cs.items });
-          return;
-        }
-        var fn = BUILTIN[type];
-        if (fn) html += fn();
-      });
-      document.getElementById('resume').innerHTML = html;
-      fitSheet();
-    }
-
-    // ---------- 等比缩放：窗口变窄时纸面整体缩小，版式永不回流 ----------
-    var sheetEl = document.getElementById('resume');
-    var wrapEl = document.getElementById('sheet-wrap');
-    function fitSheet() {
-      var avail = (document.documentElement.clientWidth || window.innerWidth || 0) - 20;
-      var w = sheetEl.offsetWidth || 1;
-      var scale = Math.min(1, avail / w);
-      if (scale < 1) {
-        sheetEl.style.transform = 'scale(' + scale + ')';
-        wrapEl.style.height = (sheetEl.offsetHeight * scale) + 'px';
+        : [
+            { type: 'skills', title: '专业技能' }, { type: 'experience', title: '工作经历' },
+            { type: 'projects', title: '项目经历' }, { type: 'education', title: '教育经历' }
+          ];
+      // 双栏/侧栏：前 N 个（sidebar 默认 4）模块进侧栏列，其余进主栏（与编辑器组装规则一致）
+      var layoutType = s.layoutType || 'single';
+      if (layoutType === 'dual' || layoutType === 'sidebar') {
+        var sideCount = layoutType === 'sidebar' ? 4 : (typeof s.dualSideCount === 'number' ? s.dualSideCount : 2);
+        var SIDE_TYPES = { skills: 1, education: 1, jobIntent: 1, training: 1, honors: 1, certs: 1 };
+        var bodyMods = mods.filter(function (m) { return m.type !== 'basic' && m.visible !== false; });
+        var side = [], main = [];
+        var si = 0;
+        bodyMods.forEach(function (m) {
+          if (si < sideCount && (SIDE_TYPES[m.type] || m.column === 'side')) { side.push(m); si++; }
+          else main.push(m);
+        });
+        var sideHTML = side.map(function (m) { return (R[m.type] || R.custom)(m); }).join('');
+        var mainHTML = main.map(function (m) { return (R[m.type] || R.custom)(m); }).join('');
+        html += '<div class="resume-body ' + (layoutType === 'dual' ? 'dual-col' : 'sidebar-layout') +
+          (layoutType === 'dual' && s.dualFocus === 'right' ? ' dual-right' : '') +
+          (layoutType === 'sidebar' && s.sidebarPosition === 'right' ? ' sidebar-right' : '') + '">' +
+          '<div class="resume-col resume-col-side">' + sideHTML + '</div>' +
+          '<div class="resume-col resume-col-main">' + mainHTML + '</div></div>';
       } else {
-        sheetEl.style.transform = '';
-        wrapEl.style.height = '';
+        mods.forEach(function (m) {
+          if (!m || m.visible === false) return;
+          if (m.type === 'basic') return; // 已在头部渲染
+          var fn = R[m.type] || (m.type === 'custom' ? R.custom : null);
+          if (fn) html += fn(m);
+        });
       }
+      paper.innerHTML = html;
     }
-    window.addEventListener('resize', fitSheet);
     renderAll();
 
     // ---------- 工具栏 ----------
