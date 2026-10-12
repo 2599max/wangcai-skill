@@ -1,6 +1,6 @@
 ---
 name: wangcai-resume-maker
-description: 按旺财简历编辑器的数据规范（schemaVersion 2）生成简历 JSON，内容按 ASu 金标准四段式 + XYZ 公式写作，并产出「在旺财简历中编辑」一键导入链接或 wc-data.json 对接文件。This skill should be used when the user asks to 生成简历、把经历做成简历、把简历导入旺财编辑器.
+description: 按旺财简历编辑器的数据规范（schemaVersion 2）生成简历 JSON，内容按 ASu 金标准四段式 + XYZ 公式写作，并产出「在旺财简历中编辑」一键导入链接。This skill should be used when the user asks to 生成简历、把经历做成简历、把简历导入旺财编辑器.
 ---
 
 # 旺财简历生成器（wangcai-resume-maker）
@@ -23,15 +23,13 @@ description: 按旺财简历编辑器的数据规范（schemaVersion 2）生成�
    - `JSON.parse` 通过；`schemaVersion===2`；`meta.id` 已生成；
    - 四段式齐全、XYZ 齐全（或缺 Y 已标注）、无「负责/参与」开头（边界声明除外）；
    - 无编造内容；图片（若有）已压缩为 dataURL；单行长度 ≤80 字符。
-5. **交付**（二选一，默认 a）：
-   - a) 运行 [scripts/to-deeplink.mjs](scripts/to-deeplink.mjs) 生成深链，把下方链接给用户：
+5. **交付**：运行 [scripts/to-deeplink.mjs](scripts/to-deeplink.mjs) 生成深链，把下方链接给用户：
 
      ```
      在旺财简历中编辑：https://<站点域名>/builder.html#r=r1.<payload>
      ```
 
      站点域名用 `WANGCAI_SITE` 环境变量或第二个命令行参数指定。
-   - b) 链接超长（编码后 >60KB，脚本会提示）时，把 JSON 保存为 `wc-data.json` 放到站点根目录，让用户在编辑器「数据」页点「从此文件导入」。
 
 ## 交付文案模板
 

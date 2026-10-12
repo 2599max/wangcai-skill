@@ -44,5 +44,5 @@ const url = `${base}/builder.html#r=${ver}.${b64}`;
 
 const kb = (n) => (n / 1024).toFixed(1) + 'KB';
 console.log(`简历: ${resume.meta.name || resume.basic?.name || '(未命名)'}  (${kb(utf8.length)})`);
-console.log(`编码后: ${kb(b64.length)}  ${b64.length > 60000 ? '⚠ 超过 60KB，聊天工具可能截断，建议改用 wc-data.json 本地导入' : ''}`);
+console.log(`编码后: ${kb(b64.length)}  ${b64.length > 60000 ? '⚠ 超过 60KB，聊天工具可能截断，建议精简简历内容后再生成' : ''}`);
 console.log('\n在旺财简历中编辑：\n' + url);
