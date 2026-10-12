@@ -45,6 +45,17 @@
 
 编辑器简历 JSON 的权威 schema 见 [wangcai-resume-maker/references/wangcai-resume-schema.md](wangcai-resume-maker/references/wangcai-resume-schema.md)（`schemaVersion: 2`，与编辑器 `js/store.js normalize()` 同步）。
 
+## 内容质量基准（ASu 金标准）
+
+所有内容类技能（audit / polish / maker / jd-match / resume-page）共享同一套写作基准：[references/asu-writing-standard.md](references/asu-writing-standard.md)。提炼自「阿酥版式」示例简历（skill 母版），并吸收高星开源简历项目的通用法则——
+
+- **四段式条目骨架**：背景与目标 → 我的职责 → 技术实现 → 产出与保障（行首标签词全文统一）；
+- **XYZ 成果行公式**（Google 前人事负责人 Laszlo Bock 推广）：达成 [X]·以 [Y] 度量·通过 [Z]；
+- **三要素**：Owner / 0→1 还是 1→100 / Scope（人数/流量/营收）必须可答；
+- **技术岗补充**（吸收自 JavaGuide / ResumeSample）：技术栈分层与熟练度互证、版本与选型理由具体化、开源贡献带 PR#/Star 数、ATS 硬规则；
+- **真实性红线**：不编造事实，估算一律 `[~X%]` 标注。
+
 ## 与编辑器内置能力的关系
 
-编辑器 AI 聊天里另有一套**内置技能**（诊断/润色/核心优势/找短板/面试预测/JD匹配等，随网页自带、无需安装），与本包功能一一对应但措辞更完整——本包面向「编辑器之外的任意 AI Agent」，二者可独立使用。
+编辑器 AI 聊天里另有一套**内置技能**（体检/润色/生成简历/JD 匹配/面试预测/自我介绍/打招呼语等，随网页自带、无需安装），与本包功能一一对应且提示词口径同源——本包面向「编辑器之外的任意 AI Agent」，二者可独立使用。
+

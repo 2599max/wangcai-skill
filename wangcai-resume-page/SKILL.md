@@ -1,6 +1,6 @@
 ---
 name: wangcai-resume-page
-description: 生成旺财同款风格的静态简历预览页 HTML（不可编辑、可一键导出 PDF），并内置「在旺财简历中编辑」深链按钮可直接导入旺财简历编辑器。当用户要求「生成简历页面」「简历网页/PDF」「静态简历」「做好简历但不用编辑器改」时使用。
+description: 生成旺财同款风格的静态简历预览页 HTML（不可编辑、可一键导出 PDF），并内置「在旺财简历中编辑」深链按钮可直接导入旺财简历编辑器。This skill should be used when the user asks for 生成简历页面、简历网页/PDF、静态简历、做好简历但不用编辑器改.
 ---
 
 # 旺财静态简历页（wangcai-resume-page）
@@ -9,7 +9,7 @@ description: 生成旺财同款风格的静态简历预览页 HTML（不可编�
 
 ## 工作流
 
-1. **组装 JSON**：严格按 [../wangcai-resume-maker/references/wangcai-resume-schema.md](../wangcai-resume-maker/references/wangcai-resume-schema.md) 生成简历 JSON（schemaVersion 2，`meta.id` 必填）。写作红线与不编造原则同 wangcai-resume-maker。
+1. **组装 JSON**：严格按 [../wangcai-resume-maker/references/wangcai-resume-schema.md](../wangcai-resume-maker/references/wangcai-resume-schema.md) 生成简历 JSON（schemaVersion 2，`meta.id` 必填）。**内容写作红线与质量基准同 wangcai-resume-maker**：先读 [../references/asu-writing-standard.md](../references/asu-writing-standard.md)（四段式 + XYZ + 三要素），不编造内容，估算标 `[~X%]`。
 2. **生成页面**（必用脚本，不要手改模板）：
 
    ```bash
@@ -19,7 +19,7 @@ description: 生成旺财同款风格的静态简历预览页 HTML（不可编�
 
    脚本做三件事：校验 JSON 结构 → 安全转义后填入模板占位符 → 注入站点域名 + 默认阿酥版式 settings。
 3. **交付**：把生成的 HTML 给用户，附使用说明（见下方模板）。
-4. **自检**：本地打开页面确认姓名/各分区渲染完整、无「简历数据缺失」提示；内容多页时确认打印预览分页处条目不被截断（模板已做 `break-inside: avoid`，无需处理）。
+4. **自检**：本地打开页面确认姓名/各分区渲染完整、无「简历数据缺失」提示；内容多页时确认打印预览分页处条目不被截断（模板已做 `break-inside: avoid`，无需处理）；按金标准页数约定提醒（1-3 年经验严格一页）。
 
 ## 两种交付形态的关系
 
