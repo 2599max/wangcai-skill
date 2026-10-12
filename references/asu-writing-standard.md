@@ -1,7 +1,7 @@
 # ASu 金标准写作规范（WangCai 共享参考）
 
-> 本文件提炼自「阿酥版式」示例简历（skill 母版）的写作范式，是 WangCai 全系简历技能
-> （audit / polish / maker / jd-match）的内容质量基准。改写或生成经历时**优先按本文件的
+> 本文件是 WangCai 全系简历技能（audit / polish / maker / jd-match）的内容质量基准，
+> 提炼自「阿酥版式」示例简历（skill 母版）的写作范式。改写或生成经历时**优先按本文件的
 > 四段式结构组织**，再叠加各技能的专属流程。
 >
 > 权威母版：旺财编辑器仓库 `.workbuddy/tmp/asu-skill-demo/ASu示例简历(skill母版).html`。
@@ -43,7 +43,7 @@
 
 规则：同一份简历内标签词风格统一；「个人贡献：只写本人实际完成的部分；保留仓库、PR、Issue 或作品链接」。
 
-## 四、成果行 XYZ 公式（Google 前人事负责人 Laszlo Bock 推广，行级公式）
+## 四、成果行 XYZ 公式（行级公式）
 
 四段式管**条目骨架**，XYZ 管**每行成果句**。实现类、产出类的每一行都应满足：
 
@@ -72,7 +72,7 @@
 
 无确切数字时：写 `[~X%]` 标注待验证估算并提醒用户核实；**绝不编造精确数字**。
 
-## 七、技术岗补充约定（吸收自 JavaGuide / ResumeSample 等高星开源简历指南）
+## 七、技术岗补充约定
 
 - **技术栈分层**：技能标签按「语言 → 框架 → 数据库/中间件 → 工具链」分层，每层按精通/熟练/了解标注；熟练度必须与项目经历互相印证（写了「精通 Kubernetes」就要有 K8s 项目支撑），忌堆砌 10+ 技术。
 - **版本与方案具体性**：写清版本与方案（「基于 Spring Boot 2.7.x 集成 Spring Security OAuth2 实现 JWT 认证」而非「使用 Spring Boot 开发后端」）；技术选型给理由（为什么 Redis 集群而不是单机：QPS、高可用、成本）。
@@ -90,11 +90,3 @@
 - [ ] 技能标签具体到工具与技术点，非笼统短语
 - [ ] 技术栈分层且熟练度与项目互相印证；版本/方案写具体
 - [ ] 每行成果句 X/Y/Z 齐全（或缺 Y 有 `[~X%]` 标注）
-
-## 参考来源
-
-- ASu skill 母版示例简历（旺财编辑器仓库 `.workbuddy/tmp/asu-skill-demo/`）
-- Google XYZ Formula（Laszlo Bock 推广：Accomplished [X] as measured by [Y], by doing [Z]）
-- JavaGuide《程序员简历编写指南》（Snailclimb/JavaGuide docs/interview-preparation/resume-guide.md）— STAR/FAB 法则、页数与样式建议
-- geekcompany/ResumeSample（高星中文程序员简历模板）— 分层技能与禁用词实践
-- AmruthPillai/Reactive-Resume — 结构化模块与 ATS 友好排版

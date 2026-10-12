@@ -1,6 +1,6 @@
 ---
 name: wangcai-resume-audit
-description: 对简历做证据式体检：完整性、表达（ASu 四段式 + Google XYZ 公式 + 弱动词/量化）、结构/ATS 四维评分，并把履历拆成原子主张逐条核验真实性。This skill should be used when the user asks to 体检简历、诊断简历、检查简历问题、给简历打分、评估简历真实性.
+description: 对简历做证据式体检：完整性、表达（ASu 四段式 + XYZ 成果行公式 + 弱动词/量化）、结构/ATS 四维评分，并把履历拆成原子主张逐条核验真实性。This skill should be used when the user asks to 体检简历、诊断简历、检查简历问题、给简历打分、评估简历真实性.
 ---
 
 # 简历体检（wangcai-resume-audit）

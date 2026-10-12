@@ -47,12 +47,12 @@
 
 ## 内容质量基准（ASu 金标准）
 
-所有内容类技能（audit / polish / maker / jd-match / resume-page）共享同一套写作基准：[references/asu-writing-standard.md](references/asu-writing-standard.md)。提炼自「阿酥版式」示例简历（skill 母版），并吸收高星开源简历项目的通用法则——
+所有内容类技能（audit / polish / maker / jd-match / resume-page）共享同一套写作基准：[references/asu-writing-standard.md](references/asu-writing-standard.md)。提炼自「阿酥版式」示例简历（skill 母版），要点——
 
 - **四段式条目骨架**：背景与目标 → 我的职责 → 技术实现 → 产出与保障（行首标签词全文统一）；
-- **XYZ 成果行公式**（Google 前人事负责人 Laszlo Bock 推广）：达成 [X]·以 [Y] 度量·通过 [Z]；
+- **XYZ 成果行公式**：达成 [X]·以 [Y] 度量·通过 [Z]；
 - **三要素**：Owner / 0→1 还是 1→100 / Scope（人数/流量/营收）必须可答；
-- **技术岗补充**（吸收自 JavaGuide / ResumeSample）：技术栈分层与熟练度互证、版本与选型理由具体化、开源贡献带 PR#/Star 数、ATS 硬规则；
+- **技术岗补充**：技术栈分层与熟练度互证、版本与选型理由具体化、开源贡献带 PR#/Star 数、ATS 硬规则；
 - **真实性红线**：不编造事实，估算一律 `[~X%]` 标注。
 
 ## 与编辑器内置能力的关系

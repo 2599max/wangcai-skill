@@ -1,6 +1,6 @@
 ---
 name: wangcai-resume-polish
-description: 简历润色优化：全文按 ASu 四段式重构（背景与目标/我的职责/技术实现/产出与保障）、成果行套 Google XYZ 公式补量化、技能标签分层拆分、自我评价去套话。This skill should be used when the user asks to 润色、优化、改写简历内容但不改结构与事实.
+description: 简历润色优化：全文按 ASu 四段式重构（背景与目标/我的职责/技术实现/产出与保障）、成果行套 XYZ 成果行公式补量化、技能标签分层拆分、自我评价去套话。This skill should be used when the user asks to 润色、优化、改写简历内容但不改结构与事实.
 ---
 
 # 简历润色（wangcai-resume-polish）
